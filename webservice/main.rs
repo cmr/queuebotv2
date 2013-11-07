@@ -1,13 +1,19 @@
 //! Queuebot web service
 
+#[feature(globs)];
+
 extern mod extra;
 extern mod http;
+extern mod postgres;
 
 use std::rt::io::Writer;
 
 use http::server::{Config, Server, ServerUtil, Request, ResponseWriter};
 use http::server::request::AbsolutePath;
 use http::status::{NotImplemented};
+
+mod logic;
+pub mod data;
 
 #[deriving(Clone)]
 struct QueueBotServer;
@@ -19,15 +25,14 @@ impl Server for QueueBotServer {
         }
     }
     fn handle_request(&self, r: &Request, w: &mut ResponseWriter) {
-        let path = match r.request_uri {
-            AbsolutePath(ref p) => p.clone(),
+        match r.request_uri {
+            AbsolutePath(ref p) => logic::dispatch_path(p, r, w),
             _ => {
                 w.status = NotImplemented;
                 w.write(bytes!("Non-path URIs not implemented"));
                 return;
             }
-        };
-        w.write(path.as_bytes());
+        }
     }
 }
 
